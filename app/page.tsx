@@ -101,16 +101,20 @@ export default function Page() {
     // Use the server-side Persian narration first. Browser speech synthesis is
     // only a fallback because it can select an unsuitable voice or read punctuation.
     if (current.audio) {
-      const audio = new Audio(current.audio)
+      const audio = new Audio()
+      audio.src = current.audio
       audio.preload = 'auto'
+      audio.setAttribute('playsinline', 'true')
       audio.onended = () => setPlaying(false)
       audio.onerror = () => setNarrationError(true)
       audioRef.current = audio
       try {
+        audio.load()
         await audio.play()
         setPlaying(true)
         return
       } catch {
+        audio.pause()
         audioRef.current = null
       }
     }
