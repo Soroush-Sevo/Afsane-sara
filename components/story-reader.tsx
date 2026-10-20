@@ -2,11 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, MotionConfig } from 'framer-motion'
-import { BookOpen, ChevronLeft, ChevronRight, Info, Pause, Settings2, Trophy, Volume2 } from 'lucide-react'
+import { BookOpen, ChevronLeft, ChevronRight, Info, Settings2, Trophy } from 'lucide-react'
 import { glossary } from '@/lib/glossary'
 import { buildGlossaryMatcher, parseContent, unitWeights } from '@/lib/reader-content'
 import { useReaderSettings } from '@/lib/reader-settings'
-import { useAudioSync } from '@/hooks/use-audio-sync'
 import { usePrefersDark } from '@/hooks/use-prefers-dark'
 import { useReadingProgress } from '@/hooks/use-reading-progress'
 import { GlossaryPopover } from './reader/glossary-popover'
@@ -21,9 +20,6 @@ type Chapter = {
   question: string
   options: string[]
   answer: string
-  audio?: string
-  /** زمان شروع هر جمله/بیت به ثانیه (اختیاری). اگر نباشد، هم‌زمان‌سازی تخمینی است. */
-  sentenceTimes?: number[]
 }
 
 type StoryReaderProps = {
@@ -31,21 +27,16 @@ type StoryReaderProps = {
   chapters: Chapter[]
   setChapter: (value: number) => void
   current: Chapter
-  playing: boolean
-  speak: () => void
-  narrationError: boolean
   answer: string | null
   setAnswer: (value: string) => void
   points: number
   setPoints: (value: number) => void
-  /** المان صوتی‌ای که page.tsx می‌سازد؛ برای هایلایت هم‌زمان متن. */
-  audioRef?: { current: HTMLAudioElement | null }
 }
 
 const fa = new Intl.NumberFormat('fa-IR')
 const glossaryMatcher = buildGlossaryMatcher(Object.keys(glossary))
 
-export function StoryReader({ chapter, chapters, setChapter, current, playing, speak, narrationError, answer, setAnswer, points, setPoints, audioRef }: StoryReaderProps) {
+export function StoryReader({ chapter, chapters, setChapter, current, answer, setAnswer, points, setPoints }: StoryReaderProps) {
   const { fontSize, lineHeight, font, theme } = useReaderSettings()
   const prefersDark = usePrefersDark()
   const resolvedTheme = theme === 'system' ? (prefersDark ? 'dark' : 'light') : theme
@@ -60,7 +51,7 @@ export function StoryReader({ chapter, chapters, setChapter, current, playing, s
 
   const blocks = useMemo(() => parseContent(current.text), [current.text])
   const weights = useMemo(() => unitWeights(blocks), [blocks])
-  const activeUnit = useAudioSync(audioRef, playing, weights, current.sentenceTimes, chapter)
+  const activeUnit = -1
   const progress = useReadingProgress(articleRef, chapter, chapters.length)
 
   const closeWord = useCallback(() => setWord(null), [])
@@ -117,17 +108,12 @@ export function StoryReader({ chapter, chapters, setChapter, current, playing, s
           <article ref={articleRef} className="reader-card">
             <div className="flex min-h-72 items-center justify-center overflow-hidden bg-[#171b24] sm:min-h-96"><img src={current.image || '/rustam-sohrab-reader.png'} alt={`تصویر ${current.title}`} className="max-h-[32rem] w-full object-contain" onError={(event) => { event.currentTarget.src = '/rustam-sohrab-reader.png' }} /></div>
             <div className="p-6 sm:p-10">
-              <div className="flex items-center justify-between gap-4">
-                <h1 className="reader-title">{current.title}</h1>
-                <button type="button" aria-label={playing ? 'توقف روایت' : 'پخش روایت فارسی'} aria-pressed={playing} onClick={speak} className="reader-icon-btn">{playing ? <Pause aria-hidden="true" /> : <Volume2 aria-hidden="true" />}</button>
-              </div>
+              <h1 className="reader-title">{current.title}</h1>
 
               <div ref={textRef} className="relative mt-6">
                 <ReaderText blocks={blocks} activeUnit={activeUnit} matcher={glossaryMatcher} glossary={glossary} openTerm={word?.term ?? null} onOpen={setWord} />
                 <AnimatePresence>{word && <GlossaryPopover key={word.term} anchor={word} container={textRef.current} onClose={closeWord} />}</AnimatePresence>
               </div>
-
-              {narrationError && <p role="status" className="reader-error">پخش صدا انجام نشد؛ دوباره روی دکمه‌ی پخش بزنید.</p>}
 
               {isLast && <StoryChoices key={chapter} question={current.question} options={current.options} correct={current.answer} selected={answer || null} onPick={pick} />}
 
