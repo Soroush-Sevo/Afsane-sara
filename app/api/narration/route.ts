@@ -15,10 +15,14 @@ export async function GET(request: NextRequest) {
   try {
     const response = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0', Accept: 'audio/mpeg,audio/*;q=0.9,*/*;q=0.8' }, cache: 'no-store' })
     if (!response.ok) return NextResponse.json({ error: 'Narration unavailable' }, { status: 502 })
-    return new NextResponse(response.body, {
+    const audio = await response.arrayBuffer()
+    return new NextResponse(audio, {
       headers: {
         'Content-Type': response.headers.get('content-type') || 'audio/mpeg',
-        'Cache-Control': 'public, max-age=3600',
+        'Content-Length': String(audio.byteLength),
+        'Content-Disposition': 'inline',
+        'Accept-Ranges': 'bytes',
+        'Cache-Control': 'public, max-age=3600, s-maxage=3600',
       },
     })
   } catch {

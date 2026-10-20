@@ -115,7 +115,7 @@ export function StoryReader({ chapter, chapters, setChapter, current, playing, s
           </div>
 
           <article ref={articleRef} className="reader-card">
-            <img src={current.image || '/rustam-sohrab-reader.png'} alt={`تصویر ${current.title}`} className="h-56 w-full object-cover sm:h-72" />
+            <div className="flex min-h-72 items-center justify-center overflow-hidden bg-[#171b24] sm:min-h-96"><img src={current.image || '/rustam-sohrab-reader.png'} alt={`تصویر ${current.title}`} className="max-h-[32rem] w-full object-contain" onError={(event) => { event.currentTarget.src = '/rustam-sohrab-reader.png' }} /></div>
             <div className="p-6 sm:p-10">
               <div className="flex items-center justify-between gap-4">
                 <h1 className="reader-title">{current.title}</h1>
